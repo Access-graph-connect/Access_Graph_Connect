@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: accessgraph
+      POSTGRES_PASSWORD: accessgraph
+      POSTGRES_DB: accessgraph
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U accessgraph"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: .
+    command: alembic upgrade head
+    environment:
+      DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: docker
+      DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: change-me
+      TOKEN_ENCRYPTION_KEY: ""
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: celery -A app.sync.celery_app:celery_app worker --loglevel=info
+    environment:
+      ENVIRONMENT: docker
+      DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: change-me
+      TOKEN_ENCRYPTION_KEY: ""
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

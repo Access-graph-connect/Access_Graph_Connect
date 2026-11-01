@@ -1,0 +1,59 @@
+{
+  "provider": "notion",
+  "simulated": true,
+  "workspace": { "id": "ws-fixture-001", "name": "Acme Fixture Workspace" },
+  "users": [
+    {
+      "id": "user-001",
+      "name": "Ada Lovelace",
+      "email": "ada@example.test",
+      "active": true,
+      "observed_at": "2026-10-30T12:00:00Z"
+    },
+    {
+      "id": "user-002",
+      "name": "Grace Hopper",
+      "email": null,
+      "active": null,
+      "observed_at": "2026-10-30T12:00:00Z"
+    }
+  ],
+  "bots": [
+    { "id": "bot-001", "name": "Deploy Bot", "observed_at": "2026-10-30T12:00:00Z" }
+  ],
+  "integrations": [
+    {
+      "id": "int-001",
+      "name": "CI Publisher",
+      "type": "internal",
+      "installed_at": "2026-10-15T09:30:00Z",
+      "observed_at": "2026-10-30T12:00:00Z"
+    }
+  ],
+  "pages": [
+    { "id": "page-001", "title": "Engineering Handbook", "observed_at": "2026-10-30T12:00:00Z" },
+    { "id": "page-002", "title": "Onboarding Checklist", "observed_at": "2026-10-30T12:00:00Z" }
+  ],
+  "grants": [
+    {
+      "subject_id": "user-001",
+      "page_id": "page-001",
+      "permission": "editor",
+      "origin": "direct",
+      "observed_at": "2026-10-30T12:00:00Z"
+    },
+    {
+      "subject_id": "bot-001",
+      "page_id": "page-001",
+      "permission": "reader",
+      "observed_at": "2026-10-30T12:00:00Z"
+    },
+    {
+      "subject_id": "user-002",
+      "integration_id": "int-001",
+      "permission": "installer",
+      "origin": "inherited",
+      "observed_at": "2026-10-30T12:00:00Z"
+    }
+  ]
+}
