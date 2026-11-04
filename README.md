@@ -34,6 +34,22 @@ uvicorn app.main:app --reload
 pytest
 ```
 
+## Connecting GitHub
+
+1. Create a GitHub App with read-only permissions (Members, Contents) and
+   note its id, slug, and private key.
+2. Set `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_PRIVATE_KEY`, and
+   `TOKEN_ENCRYPTION_KEY` in `.env`.
+3. `POST /connections/github/start` (header `X-Tenant-ID`) → open the
+   returned `install_url` and install the app into your test org.
+4. GitHub redirects to `GET /connections/github/callback`, which validates
+   the signed state, exchanges the installation token, and stores it
+   encrypted in the credential vault (only a reference is kept on the
+   connection).
+5. `POST /sync/{connection_id}` runs a read-only sync; inspect results via
+   `GET /inventory/identities`, `GET /inventory/resources`,
+   `GET /inventory/access`, and `GET /sync-runs`.
+
 ## Layout
 
 ```
@@ -52,8 +68,8 @@ docs/               architecture, design decisions, provider matrix, demo script
 
 | Phase | Day | Focus | Definition of done |
 | --- | --- | --- | --- |
-| 1 | Oct 31 | Architecture, environment, schema | API boots; migrations run; one sample fixture normalized |
-| 2 | Nov 1 | GitHub connector end-to-end | Live GitHub inventory with source timestamps |
+| 1 | Oct 31 | Architecture, environment, schema | ✅ API boots; migrations run; one sample fixture normalized |
+| 2 | Nov 1 | GitHub connector end-to-end | ✅ Live GitHub inventory with source timestamps |
 | 3 | Nov 2 | Sync engine and reconciliation | Reruns don't duplicate; partial sync can't erase known data |
 | 4 | Nov 3 | Slack connector and webhooks | Slack data loads; invalid signatures rejected |
 | 5 | Nov 4 | Credential lifecycle and failure handling | Degraded / reconnect-required states accurate |

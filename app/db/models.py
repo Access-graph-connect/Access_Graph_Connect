@@ -292,6 +292,23 @@ class WebhookInbox(Base):
     processed_at: Mapped[datetime | None] = mapped_column(DateTimeTz)
 
 
+class CredentialVault(Base):
+    """Encrypted provider token material, referenced by ProviderConnection.
+
+    Rows are write-only from the API's perspective: ciphertext never leaves
+    the server. `encrypted=False` only occurs in local dev without a
+    TOKEN_ENCRYPTION_KEY.
+    """
+
+    __tablename__ = "credential_vault"
+
+    id: Mapped[uuid.UUID] = mapped_column(sa.Uuid, primary_key=True, default=uuid.uuid4)
+    ciphertext: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    encrypted: Mapped[bool] = mapped_column(sa.Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTimeTz, default=utcnow, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTimeTz)
+
+
 class ConnectorEvent(Base):
     """Redacted audit event for connector actions (correlation-id keyed)."""
 

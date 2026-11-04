@@ -37,3 +37,24 @@
 - **D10 — Async sync via Celery + Redis.** The API stays read-only and thin;
   polling, reconciliation, and webhook-triggered ingestion run as tasks
   (Phase 3+).
+
+## Phase 2 — GitHub connector
+
+- **D11 — GitHub App, not OAuth app/PAT.** Installation tokens are
+  short-lived, scoped, and carry their own permission inventory
+  (`permissions` from the token exchange is stored as
+  `ProviderConnection.scopes`).
+- **D12 — Installation state is HMAC-signed and short-lived** (10 min),
+  binding the callback to the tenant that started the install.
+- **D13 — Tokens live in `credential_vault`, referenced by id.** Ciphertext
+  never appears in API responses, logs, or `ProviderConnection` rows.
+- **D14 — Permission origin is UNKNOWN on GitHub.** `role_name` is recorded
+  as the observed permission, but GitHub does not expose whether it was
+  granted directly on the repo or inherited from org/teams — we never claim
+  `direct`.
+- **D15 — Coverage degrades, not fails.** A 403 on org members or repo
+  collaborators narrows the snapshot and adds a coverage note (SyncRun
+  becomes `partial`); it does not fail the whole sync.
+- **D16 — Error classification at the client boundary.** 401/403 →
+  `AuthError`; 429 / 403-with-exhausted-quota → `RateLimitError` carrying
+  `Retry-After`. Phases 3 and 5 branch on these categories.

@@ -1,0 +1,38 @@
+{
+  "provider": "github",
+  "installation": { "repositories_total": 2, "repository_selection": "all" },
+  "org": { "login": "acme-test-org" },
+  "members": [
+    { "id": 1001, "login": "ada", "type": "User", "email": null },
+    { "id": 1002, "login": "grace", "type": "User", "email": "grace@example.test" },
+    { "id": 1003, "login": "deploy-bot", "type": "Bot" }
+  ],
+  "repositories": [
+    {
+      "id": 2001,
+      "name": "api-service",
+      "full_name": "acme-test-org/api-service",
+      "owner": { "login": "acme-test-org", "type": "Organization" },
+      "updated_at": "2026-10-30T12:00:00Z"
+    },
+    {
+      "id": 2002,
+      "name": "web-app",
+      "full_name": "acme-test-org/web-app",
+      "owner": { "login": "acme-test-org", "type": "Organization" },
+      "updated_at": "2026-10-29T08:00:00Z"
+    }
+  ],
+  "collaborators": {
+    "acme-test-org/api-service": [
+      { "id": 1001, "login": "ada", "type": "User", "role_name": "admin", "permissions": { "admin": true } },
+      { "id": 1002, "login": "grace", "type": "User", "role_name": "write", "permissions": { "push": true } },
+      { "id": 1003, "login": "deploy-bot", "type": "Bot", "role_name": "write", "permissions": { "push": true } }
+    ],
+    "acme-test-org/web-app": [
+      { "id": 1001, "login": "ada", "type": "User", "role_name": "read", "permissions": { "pull": true } },
+      { "id": 1004, "login": "outside-collab", "type": "User" }
+    ]
+  },
+  "coverage_notes": []
+}

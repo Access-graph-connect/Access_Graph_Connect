@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import connections, health
+from app.api.routes import connections, github, health, inventory, sync
 
 
 def create_app() -> FastAPI:
@@ -14,6 +14,9 @@ def create_app() -> FastAPI:
     )
     app.include_router(health.router)
     app.include_router(connections.router)
+    app.include_router(github.router)
+    app.include_router(inventory.router)
+    app.include_router(sync.router)
     return app
 
 

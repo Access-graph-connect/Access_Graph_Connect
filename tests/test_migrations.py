@@ -13,6 +13,7 @@ EXPECTED_TABLES = {
     "sync_cursors",
     "webhook_inbox",
     "connector_events",
+    "credential_vault",
 }
 
 
