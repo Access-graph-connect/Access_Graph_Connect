@@ -140,11 +140,19 @@ class GitHubConnector:
             installation = client.get("/installation/repositories", params={"per_page": 1})
             repos = list(client.paginate("/installation/repositories"))
 
+            # Resolve the org from repo owners, or from an explicit hint in
+            # the connection settings (needed when the installation has no
+            # repos yet, since installation tokens cannot call /installation).
             org_login = None
-            if repos:
-                owner = repos[0].get("owner") or {}
+            for repo in repos:
+                owner = repo.get("owner") or {}
                 if owner.get("type") == "Organization":
                     org_login = owner.get("login")
+                    break
+            if org_login is None:
+                hinted = context.settings.get("org")
+                if hinted:
+                    org_login = str(hinted)
 
             members: list[dict[str, Any]] = []
             if org_login:

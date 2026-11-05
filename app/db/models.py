@@ -68,6 +68,8 @@ class ProviderConnection(Base, TimestampMixin):
     )
     # Reference into the secret store. Secret material is never stored here.
     credential_ref: Mapped[str | None] = mapped_column(sa.String(200))
+    # Provider-specific hints, e.g. {"org": "my-org"} for GitHub. Never secrets.
+    settings: Mapped[dict[str, Any]] = mapped_column(sa.JSON, default=dict, nullable=False)
 
     tenant: Mapped[Tenant] = relationship(back_populates="connections")
 

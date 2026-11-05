@@ -55,6 +55,7 @@ def run_sync(
             tenant_id=connection.tenant_id,
             connection_id=connection.id,
             credential_ref=connection.credential_ref,
+            settings=connection.settings or {},
         )
         payload = connector.fetch_snapshot(context)
         snapshot: NormalizedSnapshot = connector.normalize(payload)
