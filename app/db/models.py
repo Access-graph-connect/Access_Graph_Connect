@@ -74,7 +74,15 @@ class ProviderConnection(Base, TimestampMixin):
     tenant: Mapped[Tenant] = relationship(back_populates="connections")
 
 
-class Identity(Base, TimestampMixin):
+class StalenessMixin:
+    """Soft-delete/reconciliation state. Rows are never hard-deleted by sync;
+    a complete reconciliation flags genuinely-missing records as stale."""
+
+    is_stale: Mapped[bool] = mapped_column(sa.Boolean, default=False, nullable=False)
+    reconciled_at: Mapped[datetime | None] = mapped_column(DateTimeTz)
+
+
+class Identity(Base, TimestampMixin, StalenessMixin):
     __tablename__ = "identities"
     __table_args__ = (
         sa.UniqueConstraint("connection_id", "external_id", name="uq_identity_external"),
@@ -107,7 +115,7 @@ class Identity(Base, TimestampMixin):
     raw: Mapped[dict[str, Any] | None] = mapped_column(sa.JSON)
 
 
-class Application(Base, TimestampMixin):
+class Application(Base, TimestampMixin, StalenessMixin):
     __tablename__ = "applications"
     __table_args__ = (
         sa.UniqueConstraint("connection_id", "external_id", name="uq_application_external"),
@@ -134,7 +142,7 @@ class Application(Base, TimestampMixin):
     raw: Mapped[dict[str, Any] | None] = mapped_column(sa.JSON)
 
 
-class Resource(Base, TimestampMixin):
+class Resource(Base, TimestampMixin, StalenessMixin):
     __tablename__ = "resources"
     __table_args__ = (
         sa.UniqueConstraint("connection_id", "external_id", name="uq_resource_external"),
@@ -164,7 +172,7 @@ class Resource(Base, TimestampMixin):
     raw: Mapped[dict[str, Any] | None] = mapped_column(sa.JSON)
 
 
-class AccessRecord(Base, TimestampMixin):
+class AccessRecord(Base, TimestampMixin, StalenessMixin):
     """An observed grant: subject -> permission on resource/app.
 
     `origin` distinguishes direct vs inherited grants; UNKNOWN when the

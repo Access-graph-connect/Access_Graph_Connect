@@ -109,6 +109,12 @@
         <div class="num">{{ stats.access_rules }}</div>
         <div class="label">Access permissions seen</div>
       </div>
+      {% if stats.stale > 0 %}
+      <div class="stat" style="border-color: var(--yellow);">
+        <div class="num" style="color: var(--yellow);">{{ stats.stale }}</div>
+        <div class="label">No longer found<br/><span class="muted" style="font-size:12px">(removed at the source)</span></div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Connected apps -->

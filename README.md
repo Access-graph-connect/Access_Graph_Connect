@@ -70,7 +70,7 @@ docs/               architecture, design decisions, provider matrix, demo script
 | --- | --- | --- | --- |
 | 1 | Oct 31 | Architecture, environment, schema | ✅ API boots; migrations run; one sample fixture normalized |
 | 2 | Nov 1 | GitHub connector end-to-end | ✅ Live GitHub inventory with source timestamps |
-| 3 | Nov 2 | Sync engine and reconciliation | Reruns don't duplicate; partial sync can't erase known data |
+| 3 | Nov 2 | Sync engine and reconciliation | ✅ Reruns don't duplicate; partial sync can't erase known data |
 | 4 | Nov 3 | Slack connector and webhooks | Slack data loads; invalid signatures rejected |
 | 5 | Nov 4 | Credential lifecycle and failure handling | Degraded / reconnect-required states accurate |
 | 6 | Nov 5 | Operations dashboard + fixture provider | Dashboard distinguishes live vs mock data |

@@ -71,15 +71,22 @@ def dashboard(
     ).all():
         latest_runs.setdefault(str(run.connection_id), run)
 
-    def count(model) -> int:
+    def count(model, stale: bool = False) -> int:
         return db.scalar(
-            select(func.count()).select_from(model).where(model.tenant_id == tenant_id)
+            select(func.count())
+            .select_from(model)
+            .where(model.tenant_id == tenant_id, model.is_stale.is_(stale))
         ) or 0
 
     stats = {
         "people": count(Identity),
         "resources": count(Resource),
         "access_rules": count(AccessRecord),
+        "stale": (
+            count(Identity, stale=True)
+            + count(Resource, stale=True)
+            + count(AccessRecord, stale=True)
+        ),
     }
 
     recent_runs = list(

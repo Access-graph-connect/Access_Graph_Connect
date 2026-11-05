@@ -58,3 +58,18 @@
 - **D16 — Error classification at the client boundary.** 401/403 →
   `AuthError`; 429 / 403-with-exhausted-quota → `RateLimitError` carrying
   `Retry-After`. Phases 3 and 5 branch on these categories.
+
+## Phase 3 — sync engine and reconciliation
+
+- **D17 — Bounded retry, never a tight loop.** Provider fetches retry at
+  most `max_attempts` with exponential backoff + full jitter; `Retry-After`
+  from the provider takes precedence. Auth errors are never retried.
+- **D18 — Partial sync never erases known data.** Reconciliation only marks
+  records stale when the snapshot is *complete* (zero coverage gaps). An
+  interrupted or degraded sync leaves existing rows untouched.
+- **D19 — Stale is soft, never hard-deleted.** Reconciled-away records get
+  `is_stale=True` + `reconciled_at`; they stay in the DB for audit and can
+  be *revived* if they reappear in a later complete sync.
+- **D20 — Checkpoint per connection.** `SyncCursor.last_success_at` advances
+  only on a complete successful sync, so a later partial sync can't mask a
+  gap as progress.
