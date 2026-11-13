@@ -38,6 +38,11 @@ class GitHubStartOut(BaseModel):
     state: str
 
 
+class SlackStartOut(BaseModel):
+    authorize_url: str
+    state: str
+
+
 class IdentityOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

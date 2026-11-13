@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import connections, github, health, inventory, sync, webhooks
+from app.api.routes import connections, github, health, inventory, slack, sync, webhooks
 from app.dashboard import routes as dashboard
 
 
@@ -16,6 +16,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(connections.router)
     app.include_router(github.router)
+    app.include_router(slack.router)
     app.include_router(inventory.router)
     app.include_router(sync.router)
     app.include_router(webhooks.router)

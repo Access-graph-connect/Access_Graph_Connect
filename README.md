@@ -50,6 +50,37 @@ pytest
    `GET /inventory/identities`, `GET /inventory/resources`,
    `GET /inventory/access`, and `GET /sync-runs`.
 
+## Connecting Slack
+
+1. Create a Slack app in your free workspace. Add the bot token scopes
+   `users:read`, `users:read.email`, `channels:read`, and `groups:read`.
+2. Provide an HTTPS redirect URL ending in `/connections/slack/callback`.
+   Add it to the app's OAuth settings and set the identical URL as
+   `SLACK_REDIRECT_URI` in `.env`. Slack requires HTTPS; a plain HTTP
+   localhost URL is not sufficient.
+3. Set `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`,
+   `SECRET_KEY`, and `TOKEN_ENCRYPTION_KEY` in `.env`, then start or restart
+   the API. Generate the encryption key as shown in `.env.example`.
+4. Call `POST /connections/slack/start` with `X-Tenant-ID`, open the returned
+   `authorize_url`, and approve installation. The callback stores only an
+   encrypted bot token reference.
+5. Run `POST /sync/{connection_id}` for the Slack connection and inspect
+   identities, channels, memberships, and sync coverage notes as above.
+
+The connector reads workspace users and visible public/private channels; it
+does not read messages or join channels. Private channels the app cannot see
+are reported as a coverage limitation, so those syncs remain partial and
+won't stale previously known inventory. To enable Events API delivery, expose
+`POST /webhooks/slack` over HTTPS and configure it as the app's event request
+URL. Incoming events are signature-verified and deduplicated; scheduled/manual
+sync remains the source of inventory updates.
+
+For local development, an HTTPS tunnel or reverse proxy can forward the
+callback to the API. The API trusts `X-Tenant-ID` and does not authenticate
+requests, so do not expose the whole API publicly; restrict public access to
+the OAuth callback (and, if needed, the webhook endpoint). Treat a tunnel
+provider as a third party that can see the requests it forwards.
+
 ## Layout
 
 ```
@@ -71,7 +102,7 @@ docs/               architecture, design decisions, provider matrix, demo script
 | 1 | Oct 31 | Architecture, environment, schema | ✅ API boots; migrations run; one sample fixture normalized |
 | 2 | Nov 1 | GitHub connector end-to-end | ✅ Live GitHub inventory with source timestamps |
 | 3 | Nov 2 | Sync engine and reconciliation | ✅ Reruns don't duplicate; partial sync can't erase known data |
-| 4 | Nov 3 | Slack connector and webhooks | Slack data loads; invalid signatures rejected |
+| 4 | Nov 3 | Slack connector and webhooks | Connector + signed webhook receiver implemented; live workspace validation pending |
 | 5 | Nov 4 | Credential lifecycle and failure handling | Degraded / reconnect-required states accurate |
 | 6 | Nov 5 | Operations dashboard + fixture provider | Dashboard distinguishes live vs mock data |
 | 7 | Nov 6 | Hardening, documentation, demo | Reproducible Docker demo + documented limitations |

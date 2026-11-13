@@ -28,3 +28,9 @@ def test_expired_state_rejected() -> None:
 def test_malformed_state_rejected() -> None:
     with pytest.raises(InvalidStateError):
         verify_state("not-a-state")
+
+
+def test_state_is_bound_to_its_oauth_purpose() -> None:
+    state = sign_state(uuid.uuid4(), purpose="slack")
+    with pytest.raises(InvalidStateError, match="purpose"):
+        verify_state(state, purpose="github")

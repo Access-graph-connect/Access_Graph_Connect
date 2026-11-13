@@ -26,8 +26,8 @@ remediation.
 | --- | --- | --- |
 | 1 | Architecture, environment, schema | Done |
 | 2 | GitHub connector end-to-end | Done |
-| 3 | Sync engine and reconciliation | Next |
-| 4 | Slack connector and webhooks | Pending |
+| 3 | Sync engine and reconciliation | Done |
+| 4 | Slack connector and webhooks | In progress — implementation ready for live workspace validation |
 | 5 | Credential lifecycle and failure handling | Pending |
 | 6 | Operations dashboard | Pending |
 | 7 | Hardening, documentation, demo | Pending |

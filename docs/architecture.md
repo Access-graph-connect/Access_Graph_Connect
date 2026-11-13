@@ -10,17 +10,17 @@ Provider APIs (GitHub, Slack; optional Notion fixtures)
   →  FastAPI read-only inventory API and operations dashboard
 ```
 
-## Components (Phase 1 status)
+## Components
 
 | Component | Module | Status |
 | --- | --- | --- |
 | Read-only API | `app/api/` | Health/readiness + tenant-scoped `GET /connections` |
-| Connector protocol | `app/connectors/base.py` | `Connector` protocol + `ConnectionContext` |
+| Connectors | `app/connectors/` | GitHub and Slack read-only adapters + fixture connector |
 | Fixture connector | `app/connectors/fixture.py` | JSON fixture → normalized snapshot |
-| Normalization | `app/normalization/` | Unified schema + fixture mapping rules |
+| Normalization | `app/normalization/` | Unified schema + GitHub, Slack, and fixture mappings |
 | Persistence | `app/db/` | SQLAlchemy models + Alembic migrations |
-| Worker queue | `app/sync/` | Celery app (sync engine lands in Phase 3) |
-| Security | `app/security/` | Placeholder (OAuth state, webhook verification, token encryption) |
+| Worker queue | `app/sync/` | Celery app + sync engine for GitHub and Slack |
+| Security | `app/security/` | Signed OAuth state, credential vault, GitHub/Slack webhook verification |
 | Dashboard | `app/dashboard/` | Placeholder (Phase 6) |
 
 ## Schema

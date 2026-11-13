@@ -39,7 +39,18 @@ services:
       DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: change-me
-      TOKEN_ENCRYPTION_KEY: ""
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_SLUG: ${GITHUB_APP_SLUG:-}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      GITHUB_API_BASE: ${GITHUB_API_BASE:-https://api.github.com}
+      GITHUB_WEB_BASE: ${GITHUB_WEB_BASE:-https://github.com}
+      SLACK_CLIENT_ID: ${SLACK_CLIENT_ID:-}
+      SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET:-}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+      SLACK_REDIRECT_URI: ${SLACK_REDIRECT_URI:-}
+      SLACK_API_BASE: ${SLACK_API_BASE:-https://slack.com/api}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -54,7 +65,18 @@ services:
       DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: change-me
-      TOKEN_ENCRYPTION_KEY: ""
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_SLUG: ${GITHUB_APP_SLUG:-}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      GITHUB_API_BASE: ${GITHUB_API_BASE:-https://api.github.com}
+      GITHUB_WEB_BASE: ${GITHUB_WEB_BASE:-https://github.com}
+      SLACK_CLIENT_ID: ${SLACK_CLIENT_ID:-}
+      SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET:-}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+      SLACK_REDIRECT_URI: ${SLACK_REDIRECT_URI:-}
+      SLACK_API_BASE: ${SLACK_API_BASE:-https://slack.com/api}
     depends_on:
       migrate:
         condition: service_completed_successfully

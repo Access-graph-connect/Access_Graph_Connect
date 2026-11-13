@@ -73,3 +73,16 @@
 - **D20 — Checkpoint per connection.** `SyncCursor.last_success_at` advances
   only on a complete successful sync, so a later partial sync can't mask a
   gap as progress.
+
+## Phase 4 — Slack connector
+
+- **D21 — Slack bot-token scopes stay read-only and narrow.** The connector
+  requests users and public/private channel metadata plus channel membership;
+  it never reads messages or joins channels.
+- **D22 — Slack visibility gaps remain partial.** Slack only returns
+  conversations available to the installed app. Private channels the app
+  cannot see are called out as a coverage limitation, preventing incomplete
+  snapshots from staling previously observed records.
+- **D23 — Slack Events API verifies the raw signed request.** Request
+  timestamps are limited to a five-minute window, and event IDs use the
+  shared webhook inbox uniqueness key to deduplicate retries.

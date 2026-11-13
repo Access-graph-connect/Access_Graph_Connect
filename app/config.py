@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     github_api_base: str = "https://api.github.com"
     github_web_base: str = "https://github.com"
 
+    # Slack app credentials (Phase 4).
+    slack_client_id: str = ""
+    slack_client_secret: str = ""
+    slack_signing_secret: str = ""
+    slack_redirect_uri: str = ""
+    slack_api_base: str = "https://slack.com/api"
+
     @property
     def github_app_private_key_pem(self) -> str:
         return self.github_app_private_key.replace("\\n", "\n")

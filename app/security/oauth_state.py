@@ -26,15 +26,21 @@ def _signature(payload_b64: str) -> str:
     return base64.urlsafe_b64encode(digest).decode().rstrip("=")
 
 
-def sign_state(tenant_id: uuid.UUID) -> str:
+def sign_state(tenant_id: uuid.UUID, purpose: str | None = None) -> str:
     payload = {"tid": str(tenant_id), "iat": int(time.time())}
+    if purpose:
+        payload["purpose"] = purpose
     payload_b64 = (
         base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
     )
     return f"{payload_b64}.{_signature(payload_b64)}"
 
 
-def verify_state(state: str, max_age_seconds: int = _MAX_AGE_SECONDS) -> uuid.UUID:
+def verify_state(
+    state: str,
+    max_age_seconds: int = _MAX_AGE_SECONDS,
+    purpose: str | None = None,
+) -> uuid.UUID:
     try:
         payload_b64, sig = state.split(".", 1)
     except ValueError as exc:
@@ -47,6 +53,8 @@ def verify_state(state: str, max_age_seconds: int = _MAX_AGE_SECONDS) -> uuid.UU
         tenant_id = uuid.UUID(payload["tid"])
     except Exception as exc:
         raise InvalidStateError("undecodable state") from exc
+    if purpose and payload.get("purpose") != purpose:
+        raise InvalidStateError("state purpose mismatch")
     if time.time() - issued_at > max_age_seconds:
         raise InvalidStateError("expired state")
     return tenant_id
