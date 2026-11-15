@@ -19,7 +19,8 @@
   (`AccessRecord`). They are never conflated.
 - **D5 — Credentials by reference only.** `ProviderConnection.credential_ref`
   points at a secret store; token material is never stored in the database,
-  logged, or returned by the API. Encryption at rest arrives in Phase 5.
+  logged, or returned by the API. The credential vault requires Fernet
+  encryption; it never falls back to plaintext.
 - **D6 — Idempotent upsert keys.** Inventory rows are keyed by
   `(connection_id, external_id)`; access records by
   `(connection_id, subject, resource, app, permission)`. Re-importing the
@@ -86,3 +87,29 @@
 - **D23 — Slack Events API verifies the raw signed request.** Request
   timestamps are limited to a five-minute window, and event IDs use the
   shared webhook inbox uniqueness key to deduplicate retries.
+
+## Phase 5 — credential lifecycle and failure handling
+
+- **D24 — Vault references can be locally revoked, never hard-deleted.**
+  Reauthorization stores the replacement first, then marks the previous
+  vault entry revoked; revoked and legacy plaintext entries cannot be read.
+  Local revocation does not claim to revoke a token at the provider.
+- **D25 — Connection health reflects sync evidence.** Complete syncs set
+  `active`; partial snapshots and transient provider failures set `degraded`;
+  authentication, missing, or unreadable credentials set
+  `reconnect_required`. A later successful complete sync or reauthorization
+  clears the degraded/reconnect state.
+- **D26 — OAuth state is provider-bound.** The short-lived signed state for
+  GitHub and Slack carries a purpose so a callback for one provider cannot
+  consume another provider's state.
+
+## Phase 6 — operations dashboard and fixture provider
+
+- **D27 — Fixture provenance is data, not a coverage gap.** Fixture records
+  retain `RecordSource.FIXTURE` and are labeled simulated in the dashboard.
+  Their synthetic nature alone does not make an otherwise complete fixture
+  sync partial.
+- **D28 — Dashboard source labels come from inventory provenance.** The
+  dashboard reports live, simulated, mixed, or not-yet-synced data based on
+  each connection's stored record sources, rather than inferring it from a
+  provider name.

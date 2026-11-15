@@ -13,7 +13,7 @@ from app.api.schemas import ConnectionOut, SlackStartOut
 from app.config import get_settings
 from app.db.models import ProviderConnection, Tenant
 from app.enums import ConnectionStatus, Provider
-from app.security.credentials import store_token
+from app.security.credentials import CredentialError, replace_connection_token
 from app.security.oauth_state import InvalidStateError, sign_state, verify_state
 from app.security.slack_oauth import SlackOAuthError, exchange_oauth_code
 
@@ -122,6 +122,12 @@ def slack_callback(
     )
     connection.settings = {"workspace_name": team.get("name")}
     connection.status = ConnectionStatus.ACTIVE
-    connection.credential_ref = store_token(db, token)
+    try:
+        replace_connection_token(db, connection, token)
+    except CredentialError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="credential encryption is not configured correctly",
+        ) from exc
     db.flush()
     return connection

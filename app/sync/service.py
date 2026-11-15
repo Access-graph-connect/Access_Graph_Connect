@@ -9,8 +9,7 @@ Phase 3 behavior:
 - Every run is recorded as a SyncRun with counts, status, and error class.
 """
 
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,12 +17,13 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.connectors.base import ConnectionContext
 from app.connectors.errors import AuthError, ConnectorError, RateLimitError
+from app.connectors.fixture import FixtureConnector
 from app.connectors.github import GitHubConnector
 from app.connectors.slack import SlackConnector
 from app.db.models import ProviderConnection, SyncCursor, SyncRun
-from app.enums import Provider, SyncStatus, SyncTrigger
+from app.enums import ConnectionStatus, Provider, SyncStatus, SyncTrigger
 from app.normalization.models import NormalizedSnapshot
-from app.security.credentials import retrieve_token
+from app.security.credentials import CredentialError, retrieve_token
 from app.sync.persist import upsert_snapshot
 from app.sync.reconcile import reconcile
 from app.sync.retry import RetryPolicy, run_with_retry
@@ -34,9 +34,11 @@ class SyncError(RuntimeError):
 
 
 def _build_connector(connection: ProviderConnection, db: Session):
+    if connection.provider is Provider.NOTION:
+        return FixtureConnector()
     if connection.provider in (Provider.GITHUB, Provider.SLACK):
         if not connection.credential_ref:
-            raise SyncError("connection has no credential reference")
+            raise CredentialError("connection has no credential reference")
         token = retrieve_token(db, connection.credential_ref)
         if connection.provider is Provider.SLACK:
             return SlackConnector(token, api_base=get_settings().slack_api_base)
@@ -96,26 +98,40 @@ def run_sync(
         counts.update(recon_counts)
 
         run.counts = {**counts, "coverage_notes": len(snapshot.coverage_notes)}
-        run.status = (
-            SyncStatus.SUCCEEDED if complete else SyncStatus.PARTIAL
-        )
+        run.status = SyncStatus.SUCCEEDED if complete else SyncStatus.PARTIAL
         if complete:
-            cursor.last_success_at = datetime.now(timezone.utc)
+            cursor.last_success_at = datetime.now(UTC)
             cursor.cursor = snapshot.workspace_external_id
+            connection.status = ConnectionStatus.ACTIVE
+        else:
+            connection.status = ConnectionStatus.DEGRADED
     except AuthError as exc:
         run.status = SyncStatus.FAILED
         run.error_code = "auth"
         run.error_detail = str(exc)[:1000]
+        connection.status = ConnectionStatus.RECONNECT_REQUIRED
+    except CredentialError as exc:
+        run.status = SyncStatus.FAILED
+        run.error_code = "credential"
+        run.error_detail = str(exc)[:1000]
+        connection.status = ConnectionStatus.RECONNECT_REQUIRED
+    except SyncError as exc:
+        run.status = SyncStatus.FAILED
+        run.error_code = "connector"
+        run.error_detail = str(exc)[:1000]
+        connection.status = ConnectionStatus.DEGRADED
     except RateLimitError as exc:
         run.status = SyncStatus.FAILED
         run.error_code = "rate_limit"
         run.error_detail = str(exc)[:1000]
-    except (ConnectorError, SyncError) as exc:
+        connection.status = ConnectionStatus.DEGRADED
+    except ConnectorError as exc:
         run.status = SyncStatus.FAILED
         run.error_code = "connector"
         run.error_detail = str(exc)[:1000]
+        connection.status = ConnectionStatus.DEGRADED
     finally:
-        run.finished_at = datetime.now(timezone.utc)
+        run.finished_at = datetime.now(UTC)
         db.flush()
 
     return run

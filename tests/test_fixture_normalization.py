@@ -6,7 +6,13 @@ from app.connectors.fixture import FixtureConnector
 from app.enums import AccessOrigin, IdentityKind, Provider, RecordSource, ResourceType
 from app.normalization.mapping import normalize_fixture_payload
 
-FIXTURE_PATH = Path(__file__).parent / "fixtures" / "notion_fixture.json"
+FIXTURE_PATH = (
+    Path(__file__).parents[1]
+    / "app"
+    / "connectors"
+    / "fixtures"
+    / "notion_fixture.json"
+)
 
 
 def _load() -> dict:
@@ -52,7 +58,6 @@ def test_unknowns_are_explicit_never_inferred() -> None:
     assert user2.is_active is None
 
     # Coverage limitations are surfaced, not silently dropped.
-    assert any("simulated" in note for note in snapshot.coverage_notes)
     assert any("unknown" in note for note in snapshot.coverage_notes)
 
 

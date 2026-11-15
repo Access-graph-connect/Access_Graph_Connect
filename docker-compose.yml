@@ -33,12 +33,12 @@ services:
   api:
     build: .
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      ENVIRONMENT: docker
+      ENVIRONMENT: demo
       DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: change-me
+      SECRET_KEY: ${SECRET_KEY:-local-demo-only}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
       GITHUB_APP_ID: ${GITHUB_APP_ID:-}
       GITHUB_APP_SLUG: ${GITHUB_APP_SLUG:-}
@@ -61,10 +61,10 @@ services:
     build: .
     command: celery -A app.sync.celery_app:celery_app worker --loglevel=info
     environment:
-      ENVIRONMENT: docker
+      ENVIRONMENT: demo
       DATABASE_URL: postgresql+psycopg://accessgraph:accessgraph@db:5432/accessgraph
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: change-me
+      SECRET_KEY: ${SECRET_KEY:-local-demo-only}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
       GITHUB_APP_ID: ${GITHUB_APP_ID:-}
       GITHUB_APP_SLUG: ${GITHUB_APP_SLUG:-}

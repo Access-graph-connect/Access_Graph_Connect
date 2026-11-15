@@ -40,7 +40,7 @@
       font-weight: 700; font-size: 16px; color: white;
     }
 
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
     .stat {
       background: var(--card); border: 1px solid var(--card-border);
       border-radius: 12px; padding: 20px;
@@ -73,6 +73,8 @@
     .badge.warn { background: var(--yellow-bg); color: var(--yellow); }
     .badge.err { background: var(--red-bg); color: var(--red); }
     .badge.info { background: var(--blue-bg); color: var(--blue); }
+    .badge.simulated { background: rgba(188, 140, 255, 0.12); color: #bc8cff; }
+    .conn-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px;
@@ -86,6 +88,11 @@
     }
     .muted { color: var(--muted); }
     .mono { font-family: ui-monospace, monospace; font-size: 13px; }
+    @media (max-width: 720px) {
+      body { padding: 16px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .conn { align-items: flex-start; }
+    }
   </style>
 </head>
 <body>
@@ -100,6 +107,10 @@
       <div class="stat">
         <div class="num">{{ stats.people }}</div>
         <div class="label">People &amp; accounts found</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ stats.applications }}</div>
+        <div class="label">Connected applications</div>
       </div>
       <div class="stat">
         <div class="num">{{ stats.resources }}</div>
@@ -138,7 +149,13 @@
             </div>
           </div>
         </div>
-        <div>
+        <div class="conn-badges">
+          {% set data_source = data_sources.get(c.id | string, 'No inventory yet') %}
+          {% if data_source == 'Simulated data' %}
+            <span class="badge simulated">● {{ data_source }}</span>
+          {% else %}
+            <span class="badge info">● {{ data_source }}</span>
+          {% endif %}
           {% if c.status.value == 'active' %}
             <span class="badge ok">● Healthy</span>
           {% elif c.status.value == 'degraded' %}
@@ -168,11 +185,11 @@
           <tr>
             <td style="text-transform: capitalize;">{{ run.provider.value }}</td>
             <td class="muted">
-              {% set total = run.counts.get('identities_created',0) + run.counts.get('resources_created',0) + run.counts.get('access_records_created',0) %}
+              {% set total = run.counts.get('identities_created',0) + run.counts.get('identities_updated',0) + run.counts.get('applications_created',0) + run.counts.get('applications_updated',0) + run.counts.get('resources_created',0) + run.counts.get('resources_updated',0) + run.counts.get('access_records_created',0) + run.counts.get('access_records_updated',0) %}
               {% if total > 0 %}
-                Found {{ total }} new item{{ 's' if total != 1 }}
+                Processed {{ total }} item{{ 's' if total != 1 }}
               {% else %}
-                Everything up to date
+                No inventory changes
               {% endif %}
             </td>
             <td class="muted">{{ run.started_at | time_ago }}</td>

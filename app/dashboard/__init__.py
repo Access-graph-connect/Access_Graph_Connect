@@ -1,1 +1,1 @@
-"""Read-only operations dashboard. Implemented in Phase 6."""
+"""Read-only operations dashboard."""

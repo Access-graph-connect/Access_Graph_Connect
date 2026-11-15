@@ -116,9 +116,9 @@ def test_sync_without_credential_records_failed_run() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "failed"
-    assert body["error_code"] == "connector"
+    assert body["error_code"] == "credential"
 
     runs = client.get("/sync-runs", headers=headers)
     assert runs.status_code == 200
     assert len(runs.json()) == 1
-    assert runs.json()[0]["error_code"] == "connector"
+    assert runs.json()[0]["error_code"] == "credential"

@@ -6,17 +6,20 @@ always be labeled as simulated, never presented as live provider data.
 """
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from app.connectors.base import ConnectionContext
 from app.enums import Provider
 from app.normalization.mapping import normalize_fixture_payload
 from app.normalization.models import NormalizedSnapshot
 
+DEFAULT_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "notion_fixture.json"
+
 
 class FixtureConnector:
-    def __init__(self, fixture_path: str | Path) -> None:
+    def __init__(self, fixture_path: str | Path = DEFAULT_FIXTURE_PATH) -> None:
         self._fixture_path = Path(fixture_path)
 
     @property

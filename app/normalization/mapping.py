@@ -5,8 +5,9 @@ mapping modules; this one handles the fixture document format shared by the
 simulated Notion adapter and tests.
 """
 
-from datetime import datetime, timezone
-from typing import Any, Mapping
+from collections.abc import Mapping
+from datetime import UTC, datetime
+from typing import Any
 
 from app.enums import (
     AccessOrigin,
@@ -30,8 +31,8 @@ def _parse_dt(value: Any) -> datetime:
     if isinstance(value, datetime):
         return value
     if isinstance(value, str):
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
-    return datetime.now(timezone.utc)
+        return datetime.fromisoformat(value)
+    return datetime.now(UTC)
 
 
 def _parse_origin(value: Any) -> AccessOrigin:
@@ -45,10 +46,6 @@ def normalize_fixture_payload(payload: Mapping[str, Any]) -> NormalizedSnapshot:
     provider = Provider(str(payload["provider"]))
     workspace = payload.get("workspace") or {}
     coverage_notes: list[str] = []
-    if payload.get("simulated"):
-        coverage_notes.append(
-            "Fixture data is simulated; it is not live provider data."
-        )
 
     identities: list[NormalizedIdentity] = []
     for user in payload.get("users", []):

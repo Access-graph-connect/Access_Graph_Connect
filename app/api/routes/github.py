@@ -18,7 +18,7 @@ from app.api.schemas import ConnectionOut, GitHubStartOut
 from app.config import get_settings
 from app.db.models import ProviderConnection, Tenant
 from app.enums import ConnectionStatus, Provider
-from app.security.credentials import store_token
+from app.security.credentials import CredentialError, replace_connection_token
 from app.security.github_app import exchange_installation_token
 from app.security.oauth_state import InvalidStateError, sign_state, verify_state
 
@@ -35,7 +35,7 @@ def start_github_installation(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="GitHub App is not configured (GITHUB_APP_SLUG missing)",
         )
-    state = sign_state(tenant_id)
+    state = sign_state(tenant_id, purpose="github")
     query = urlencode({"state": state})
     return GitHubStartOut(
         install_url=(
@@ -54,7 +54,7 @@ def github_callback(
     db: Session = Depends(get_db),
 ) -> ProviderConnection:
     try:
-        tenant_id = verify_state(state)
+        tenant_id = verify_state(state, purpose="github")
     except InvalidStateError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
@@ -82,7 +82,6 @@ def github_callback(
         db.add(tenant)
         db.flush()
 
-    credential_ref = store_token(db, token)
     scopes = sorted((token_response.get("permissions") or {}).keys())
 
     connection = db.scalar(
@@ -101,7 +100,13 @@ def github_callback(
         db.add(connection)
     connection.scopes = scopes
     connection.status = ConnectionStatus.ACTIVE
-    connection.credential_ref = credential_ref
+    try:
+        replace_connection_token(db, connection, token)
+    except CredentialError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="credential encryption is not configured correctly",
+        ) from exc
     db.flush()
 
     return connection

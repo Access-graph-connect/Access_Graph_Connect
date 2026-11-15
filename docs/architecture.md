@@ -19,9 +19,9 @@ Provider APIs (GitHub, Slack; optional Notion fixtures)
 | Fixture connector | `app/connectors/fixture.py` | JSON fixture → normalized snapshot |
 | Normalization | `app/normalization/` | Unified schema + GitHub, Slack, and fixture mappings |
 | Persistence | `app/db/` | SQLAlchemy models + Alembic migrations |
-| Worker queue | `app/sync/` | Celery app + sync engine for GitHub and Slack |
+| Worker queue | `app/sync/` | Celery app + sync engine for GitHub, Slack, and the Notion fixture |
 | Security | `app/security/` | Signed OAuth state, credential vault, GitHub/Slack webhook verification |
-| Dashboard | `app/dashboard/` | Placeholder (Phase 6) |
+| Dashboard | `app/dashboard/` | Tenant-scoped operations view with live/simulated provenance labels |
 
 ## Schema
 
@@ -37,3 +37,29 @@ idempotent on `(connection_id, external_id)`.
 
 `docker-compose.yml` runs PostgreSQL, Redis, a one-shot `migrate` service
 (`alembic upgrade head`), the FastAPI `api`, and a Celery `worker`.
+
+## Security and demo limitations
+
+The Compose setup is for local demonstration only: its API port binds to
+`127.0.0.1`, access logging is disabled to avoid recording OAuth callback
+query parameters, and its fallback signing key is explicitly non-production.
+Set a unique `SECRET_KEY` and a valid Fernet `TOKEN_ENCRYPTION_KEY` before
+running with `ENVIRONMENT=production`; startup rejects missing or invalid
+production keys. Generate these values with:
+
+```sh
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+The API currently takes `X-Tenant-ID` directly from the request and does not
+authenticate users or authorize tenant membership. Loopback binding limits
+the demo's network exposure but is not a substitute for authentication.
+Do not expose this service to a network or use it for multi-user or
+production workloads until authentication, tenant authorization, TLS
+termination, and production secret management are provided. Slack OAuth
+requires an HTTPS callback and is not part of the HTTP-only Compose demo.
+
+The Notion adapter is a deterministic fixture, not a live provider
+integration. Its synthetic records are labeled simulated, and any unknown
+permission origin remains a coverage limitation.

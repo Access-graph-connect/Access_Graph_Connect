@@ -13,12 +13,17 @@ remediation.
 
 ```sh
 cp .env.example .env
-docker compose up --build
-# API: http://localhost:8000/healthz  (docs at /docs)
+docker compose up --build -d
+docker compose run --rm api python -m app.demo
+# API: http://127.0.0.1:8000/healthz
+# Dashboard URL and tenant ID are printed by the demo command.
 ```
 
 Compose starts PostgreSQL, Redis, runs `alembic upgrade head`, then boots
-the API and Celery worker.
+the API and Celery worker. The demo command creates a stable local demo
+tenant, seeds the simulated Notion fixture, and runs its first sync. Re-run
+it safely to refresh the fixture inventory. The API port is published only
+on loopback.
 
 ## Local development
 
@@ -81,6 +86,19 @@ requests, so do not expose the whole API publicly; restrict public access to
 the OAuth callback (and, if needed, the webhook endpoint). Treat a tunnel
 provider as a third party that can see the requests it forwards.
 
+## Dashboard and simulated fixture
+
+The operations dashboard is available at
+`/dashboard?tenant_id=<TENANT_UUID>`. It shows inventory totals, connection
+health, recent syncs, and whether each connection's inventory came from live
+provider APIs or simulated fixture data.
+
+The local demo command above prints a ready-to-open dashboard URL. To seed
+the fixture into an existing tenant instead, pass
+`--tenant-id <TENANT_UUID>` to `python -m app.demo`. The fixture is not a live
+Notion integration, and its unknown permission origin may make the sync
+status partial by design.
+
 ## Layout
 
 ```
@@ -102,10 +120,10 @@ docs/               architecture, design decisions, provider matrix, demo script
 | 1 | Oct 31 | Architecture, environment, schema | ✅ API boots; migrations run; one sample fixture normalized |
 | 2 | Nov 1 | GitHub connector end-to-end | ✅ Live GitHub inventory with source timestamps |
 | 3 | Nov 2 | Sync engine and reconciliation | ✅ Reruns don't duplicate; partial sync can't erase known data |
-| 4 | Nov 3 | Slack connector and webhooks | Connector + signed webhook receiver implemented; live workspace validation pending |
-| 5 | Nov 4 | Credential lifecycle and failure handling | Degraded / reconnect-required states accurate |
-| 6 | Nov 5 | Operations dashboard + fixture provider | Dashboard distinguishes live vs mock data |
-| 7 | Nov 6 | Hardening, documentation, demo | Reproducible Docker demo + documented limitations |
+| 4 | Nov 3 | Slack connector and webhooks | ✅ Live workspace sync; signed webhook receiver and deduplication tested |
+| 5 | Nov 4 | Credential lifecycle and failure handling | In progress: encrypted vault and connection health transitions implemented |
+| 6 | Nov 5 | Operations dashboard + fixture provider | ✅ Dashboard distinguishes live vs mock data |
+| 7 | Nov 6 | Hardening, documentation, demo | In progress: loopback-only demo, repeatable fixture seed, production secret validation |
 
 See `docs/design-decisions.md` for the engineering rules (explicit unknowns,
 idempotent upserts, credentials by reference, webhook deduplication).
