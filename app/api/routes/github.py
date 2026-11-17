@@ -19,7 +19,7 @@ from app.config import get_settings
 from app.db.models import ProviderConnection, Tenant
 from app.enums import ConnectionStatus, Provider
 from app.security.credentials import CredentialError, replace_connection_token
-from app.security.github_app import exchange_installation_token
+from app.security.github_app import exchange_installation_token, parse_token_expiry
 from app.security.oauth_state import InvalidStateError, sign_state, verify_state
 
 router = APIRouter(tags=["github"])
@@ -75,6 +75,13 @@ def github_callback(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="provider did not return an installation token",
         )
+    try:
+        credential_expires_at = parse_token_expiry(token_response)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="provider did not return a valid installation token expiry",
+        ) from exc
 
     tenant = db.get(Tenant, tenant_id)
     if tenant is None:
@@ -100,6 +107,7 @@ def github_callback(
         db.add(connection)
     connection.scopes = scopes
     connection.status = ConnectionStatus.ACTIVE
+    connection.credential_expires_at = credential_expires_at
     try:
         replace_connection_token(db, connection, token)
     except CredentialError as exc:

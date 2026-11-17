@@ -122,6 +122,7 @@ def slack_callback(
     )
     connection.settings = {"workspace_name": team.get("name")}
     connection.status = ConnectionStatus.ACTIVE
+    connection.credential_expires_at = None
     try:
         replace_connection_token(db, connection, token)
     except CredentialError as exc:

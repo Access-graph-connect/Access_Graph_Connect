@@ -94,6 +94,18 @@
   Reauthorization stores the replacement first, then marks the previous
   vault entry revoked; revoked and legacy plaintext entries cannot be read.
   Local revocation does not claim to revoke a token at the provider.
+- **D29 — GitHub installation tokens renew before expiry.** The exchange
+  expiry is stored as non-secret metadata. Sync obtains a replacement when
+  the expiry is missing or within five minutes, then stores it in the vault
+  and locally revokes the previous reference. Legacy GitHub connections
+  without expiry metadata are renewed on their next sync.
+- **D30 — Provider-side credential revocation is deliberate, not automatic.**
+  Replacing a local credential never invokes provider-side revoke APIs.
+  Slack's [`auth.revoke`](https://docs.slack.dev/reference/methods/auth.revoke/)
+  deactivates the token's bot and removes its channel memberships, so it
+  requires an explicit operator decision. Uninstalling the GitHub App is
+  likewise an operator action; local vault revocation alone does not revoke
+  a credential at either provider.
 - **D25 — Connection health reflects sync evidence.** Complete syncs set
   `active`; partial snapshots and transient provider failures set `degraded`;
   authentication, missing, or unreadable credentials set

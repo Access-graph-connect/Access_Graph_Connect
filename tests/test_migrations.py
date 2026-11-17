@@ -33,6 +33,10 @@ def test_alembic_upgrade_head_creates_schema(tmp_path, monkeypatch) -> None:
 
     tables = set(inspect(create_engine(url)).get_table_names())
     assert EXPECTED_TABLES <= tables
+    columns = {column["name"] for column in inspect(create_engine(url)).get_columns(
+        "provider_connections"
+    )}
+    assert "credential_expires_at" in columns
 
 
 def test_upgrade_encrypts_legacy_plaintext_credentials(tmp_path, monkeypatch) -> None:

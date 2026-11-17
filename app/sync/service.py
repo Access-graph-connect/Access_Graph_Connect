@@ -9,8 +9,10 @@ Phase 3 behavior:
 - Every run is recorded as a SyncRun with counts, status, and error class.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
+import httpx
+from jwt.exceptions import PyJWTError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,7 +25,12 @@ from app.connectors.slack import SlackConnector
 from app.db.models import ProviderConnection, SyncCursor, SyncRun
 from app.enums import ConnectionStatus, Provider, SyncStatus, SyncTrigger
 from app.normalization.models import NormalizedSnapshot
-from app.security.credentials import CredentialError, retrieve_token
+from app.security.credentials import (
+    CredentialError,
+    replace_connection_token,
+    retrieve_token,
+)
+from app.security.github_app import exchange_installation_token, parse_token_expiry
 from app.sync.persist import upsert_snapshot
 from app.sync.reconcile import reconcile
 from app.sync.retry import RetryPolicy, run_with_retry
@@ -33,16 +40,80 @@ class SyncError(RuntimeError):
     pass
 
 
+_GITHUB_TOKEN_RENEWAL_WINDOW = timedelta(minutes=5)
+
+
+def _retry_after_seconds(response: httpx.Response) -> float | None:
+    value = response.headers.get("retry-after")
+    return float(value) if value and value.isdigit() else None
+
+
+def _github_connector(connection: ProviderConnection, db: Session) -> GitHubConnector:
+    if not connection.credential_ref:
+        raise CredentialError("connection has no credential reference")
+
+    token = retrieve_token(db, connection.credential_ref)
+    expires_at = connection.credential_expires_at
+    if expires_at is not None and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if (
+        expires_at is None
+        or expires_at <= datetime.now(UTC) + _GITHUB_TOKEN_RENEWAL_WINDOW
+    ):
+        try:
+            installation_id = int(connection.external_workspace_id or "")
+        except ValueError as exc:
+            raise SyncError("GitHub connection has an invalid installation id") from exc
+
+        try:
+            response = exchange_installation_token(get_settings(), installation_id)
+        except httpx.HTTPStatusError as exc:
+            if (
+                exc.response.status_code == 403
+                and exc.response.headers.get("x-ratelimit-remaining") == "0"
+            ):
+                raise RateLimitError(
+                    "GitHub token renewal was rate limited",
+                    retry_after=_retry_after_seconds(exc.response),
+                ) from exc
+            if exc.response.status_code in (401, 403):
+                raise AuthError(
+                    "GitHub App authentication failed during token renewal"
+                ) from exc
+            if exc.response.status_code == 429:
+                raise RateLimitError(
+                    "GitHub token renewal was rate limited",
+                    retry_after=_retry_after_seconds(exc.response),
+                ) from exc
+            raise ConnectorError("GitHub installation token renewal failed") from exc
+        except (httpx.HTTPError, PyJWTError, TypeError, ValueError) as exc:
+            raise ConnectorError("GitHub installation token renewal failed") from exc
+
+        replacement = response.get("token") if isinstance(response, dict) else None
+        if not isinstance(replacement, str) or not replacement:
+            raise ConnectorError("GitHub token renewal returned no installation token")
+        try:
+            expires_at = parse_token_expiry(response)
+        except ValueError as exc:
+            raise ConnectorError("GitHub token renewal returned an invalid expiry") from exc
+
+        replace_connection_token(db, connection, replacement)
+        connection.credential_expires_at = expires_at
+        token = replacement
+
+    return GitHubConnector(token)
+
+
 def _build_connector(connection: ProviderConnection, db: Session):
     if connection.provider is Provider.NOTION:
         return FixtureConnector()
-    if connection.provider in (Provider.GITHUB, Provider.SLACK):
+    if connection.provider is Provider.GITHUB:
+        return _github_connector(connection, db)
+    if connection.provider is Provider.SLACK:
         if not connection.credential_ref:
             raise CredentialError("connection has no credential reference")
         token = retrieve_token(db, connection.credential_ref)
-        if connection.provider is Provider.SLACK:
-            return SlackConnector(token, api_base=get_settings().slack_api_base)
-        return GitHubConnector(token)
+        return SlackConnector(token, api_base=get_settings().slack_api_base)
     raise SyncError(f"no live connector for provider {connection.provider!r}")
 
 

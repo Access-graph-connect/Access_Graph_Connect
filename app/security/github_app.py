@@ -1,6 +1,7 @@
 """GitHub App authentication: JWT signing and installation token exchange."""
 
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -48,3 +49,17 @@ def exchange_installation_token(
     finally:
         if owns_client:
             client.close()
+
+
+def parse_token_expiry(token_response: dict[str, Any]) -> datetime:
+    """Parse GitHub's non-secret installation-token expiry metadata."""
+    value = token_response.get("expires_at")
+    if not isinstance(value, str):
+        raise ValueError("GitHub did not return an installation token expiry")
+    try:
+        expiry = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("GitHub returned an invalid installation token expiry") from exc
+    if expiry.tzinfo is None:
+        raise ValueError("GitHub returned a timezone-naive installation token expiry")
+    return expiry.astimezone(UTC)
