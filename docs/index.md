@@ -30,4 +30,4 @@ remediation.
 | 4 | Slack connector and webhooks | Done — live workspace sync validated; webhook endpoint tested |
 | 5 | Credential lifecycle and failure handling | In progress — encrypted storage, reauthorization, and health transitions |
 | 6 | Operations dashboard + fixture provider | Done — live and simulated inventory are labeled |
-| 7 | Hardening, documentation, demo | In progress — loopback-bound demo, repeatable fixture seeding, and production secret validation |
+| 7 | Hardening, documentation, demo | Done — Compose demo built and smoke-tested locally; limitations documented |

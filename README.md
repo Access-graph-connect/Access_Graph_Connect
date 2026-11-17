@@ -23,7 +23,8 @@ Compose starts PostgreSQL, Redis, runs `alembic upgrade head`, then boots
 the API and Celery worker. The demo command creates a stable local demo
 tenant, seeds the simulated Notion fixture, and runs its first sync. Re-run
 it safely to refresh the fixture inventory. The API port is published only
-on loopback.
+on loopback. GitHub Actions builds this Compose stack, checks health and
+readiness, repeats the seed command, and verifies the dashboard label.
 
 ## Local development
 
@@ -123,7 +124,7 @@ docs/               architecture, design decisions, provider matrix, demo script
 | 4 | Nov 3 | Slack connector and webhooks | ✅ Live workspace sync; signed webhook receiver and deduplication tested |
 | 5 | Nov 4 | Credential lifecycle and failure handling | In progress: encrypted vault and connection health transitions implemented |
 | 6 | Nov 5 | Operations dashboard + fixture provider | ✅ Dashboard distinguishes live vs mock data |
-| 7 | Nov 6 | Hardening, documentation, demo | In progress: loopback-only demo, repeatable fixture seed, production secret validation |
+| 7 | Nov 6 | Hardening, documentation, demo | ✅ Compose stack built and smoke-tested locally; limitations documented |
 
 See `docs/design-decisions.md` for the engineering rules (explicit unknowns,
 idempotent upserts, credentials by reference, webhook deduplication).

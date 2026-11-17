@@ -63,3 +63,9 @@ requires an HTTPS callback and is not part of the HTTP-only Compose demo.
 The Notion adapter is a deterministic fixture, not a live provider
 integration. Its synthetic records are labeled simulated, and any unknown
 permission origin remains a coverage limitation.
+
+The `Compose demo` GitHub Actions workflow builds and starts the Compose
+stack, checks API health/readiness, runs the fixture seeder twice to verify
+idempotency, and checks that the tenant dashboard labels its records as
+simulated. The local Compose demo itself remains intended for development,
+not production deployment.

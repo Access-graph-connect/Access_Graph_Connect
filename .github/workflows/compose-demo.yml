@@ -1,0 +1,65 @@
+name: Compose demo
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compose-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start the demo stack
+        run: docker compose up --build --detach
+
+      - name: Check health and readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/readyz; then
+              break
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              echo "API did not become ready" >&2
+              docker compose ps
+              docker compose logs api
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/healthz
+
+      - name: Seed the fixture twice and verify the dashboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          first="$(docker compose run --rm api python -m app.demo)"
+          second="$(docker compose run --rm api python -m app.demo)"
+          printf '%s\n' "$first"
+
+          tenant_id="$(sed -n 's/^Tenant ID: //p' <<< "$first")"
+          connection_id="$(sed -n 's/^Connection ID: //p' <<< "$first")"
+          repeated_tenant_id="$(sed -n 's/^Tenant ID: //p' <<< "$second")"
+          repeated_connection_id="$(sed -n 's/^Connection ID: //p' <<< "$second")"
+
+          test -n "$tenant_id"
+          test -n "$connection_id"
+          test "$tenant_id" = "$repeated_tenant_id"
+          test "$connection_id" = "$repeated_connection_id"
+          grep -q '^Sync status: partial$' <<< "$first"
+
+          dashboard="$(curl --fail --silent \
+            "http://127.0.0.1:8000/dashboard?tenant_id=$tenant_id")"
+          grep -q 'Simulated data' <<< "$dashboard"
+
+      - name: Stop the demo stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans
